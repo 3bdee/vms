@@ -5,22 +5,18 @@ import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/school/:schoolId", authenticate, async (req, res) => {
-  const { schoolId } = req.params;
-  const [rows] = await db.query(
-    "SELECT * FROM violations WHERE school_id = ?",
-    [schoolId]
-  );
+router.get("/", authenticate, async (req, res) => {
+  const [rows] = await db.query("SELECT * FROM violations");
   res.json(rows);
 });
 
 router.post("/", authenticate, async (req, res) => {
-  const { school_id, violation_name } = req.body;
+  const { violation_name } = req.body;
   const id = uuidv4();
-  await db.query(
-    "INSERT INTO violations (id, school_id, violation_name) VALUES (?, ?, ?)",
-    [id, school_id, violation_name]
-  );
+  await db.query("INSERT INTO violations (id, violation_name) VALUES (?, ?)", [
+    id,
+    violation_name,
+  ]);
   res.json({ id });
 });
 
