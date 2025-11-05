@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FileText, User, ChevronDown, X } from 'lucide-react-native';
 import { Student, Violation, Punishment, Level } from '@/lib/types';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function NewViolationScreen() {
   const { teacher } = useAuth();
@@ -48,7 +49,7 @@ export default function NewViolationScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-
+  const [full_name, setFullName] = useState('');
   useEffect(() => {
     if (firstName.length > 1) {
       searchStudents(firstName);
@@ -57,24 +58,31 @@ export default function NewViolationScreen() {
       setShowSuggestions(false);
     }
   }, [firstName]);
-  const token = localStorage.getItem('token');
-  const full_name = localStorage.getItem('teacher_name');
-  const schoolId = localStorage.getItem('school_id');
-  const teacherId = localStorage.getItem('teacher_id');
+
   const loadViolationsAndPunishments = async () => {
     try {
+      const token = await AsyncStorage.getItem('token');
+      console.log(token);
+      const full_name = await AsyncStorage.getItem('teacher_name');
+      console.log(full_name);
+      setFullName(full_name || '');
+      if (!token) {
+        console.error('No token found in storage. Redirecting to login.');
+        return;
+      }
+
       const [violationsData, punishmentsData, levelsData] = await Promise.all([
-        fetch('http://localhost:5000/api/violations', {
+        fetch('http://167.88.39.169:5000/api/violations', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }).then((res) => res.json()),
-        fetch('http://localhost:5000/api/punishments', {
+        fetch('http://167.88.39.169:5000/api/punishments', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }).then((res) => res.json()),
-        fetch('http://localhost:5000/api/levels/school', {
+        fetch('http://167.88.39.169:5000/api/levels/school', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -92,13 +100,15 @@ export default function NewViolationScreen() {
   }, []);
 
   const searchStudents = async (searchTerm: string) => {
+    const schoolId = await AsyncStorage.getItem('school_id');
+    const token = await AsyncStorage.getItem('token');
     if (!schoolId || !searchTerm) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/students/school`, {
+      const res = await fetch(`http://167.88.39.169:5000/api/students/school`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -144,7 +154,9 @@ export default function NewViolationScreen() {
   const handleSubmit = async () => {
     setError('');
     setSuccess('');
-
+    const token = await AsyncStorage.getItem('token');
+    const schoolId = await AsyncStorage.getItem('school_id');
+    const teacherId = await AsyncStorage.getItem('teacher_id');
     if (
       !firstName ||
       !lastName ||
@@ -165,23 +177,26 @@ export default function NewViolationScreen() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/violation-records', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          teacher_id: teacherId,
-          violation_id: selectedViolation.id,
-          punishment_id: selectedPunishment.id,
-          level: selectedLevel.level_name,
-          first_name: firstName,
-          last_name: lastName,
-          violation_time: violationTime,
-          school_id: schoolId,
-        }),
-      });
+      const res = await fetch(
+        'http://167.88.39.169:5000/api/violation-records',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            teacher_id: teacherId,
+            violation_id: selectedViolation.id,
+            punishment_id: selectedPunishment.id,
+            level: selectedLevel.level_name,
+            first_name: firstName,
+            last_name: lastName,
+            violation_time: violationTime,
+            school_id: schoolId,
+          }),
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur serveur');
       const violationCount = data.newViolationCount;
@@ -189,7 +204,7 @@ export default function NewViolationScreen() {
       if (violationCount % 3 === 0) {
         setViolationAlert({
           show: true,
-          student: selectedStudent,
+          student: selectedStudent!,
           count: violationCount,
         });
       }

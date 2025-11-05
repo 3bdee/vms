@@ -9,37 +9,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { LogIn } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_URL = 'http://localhost:5000/api/auth/teacher-login';
+const API_URL = 'http://167.88.39.169:5000/api/auth/teacher-login';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, user } = useAuth();
   const router = useRouter();
 
-  // if (user) {
-  //   router.replace('/(tabs)');
-  //   return null;
-  // }
-
-  // const handleLogin = async () => {
-  //   setError('');
-  //   setLoading(true);
-
-  //   const { error: signInError } = await signIn(email, password);
-
-  //   if (signInError) {
-  //     setError(signInError);
-  //     setLoading(false);
-  //   } else {
-  //     router.replace('/(tabs)');
-  //   }
-  // };
   const handleLogin = async () => {
     setError('');
     try {

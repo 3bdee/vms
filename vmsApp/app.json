@@ -8,9 +8,6 @@
     "scheme": "VMSAPP",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
     "web": {
       "bundler": "metro",
       "output": "single",
@@ -19,6 +16,27 @@
     "plugins": ["expo-router", "expo-font", "expo-web-browser"],
     "experiments": {
       "typedRoutes": true
+    },
+    "splash": {
+      "image": "./assets/images/favicon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alhikma.vmsapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.alhikma.vmsapp"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a624c785-3404-4915-893f-50d7fb4311b1"
+      }
     }
   }
 }

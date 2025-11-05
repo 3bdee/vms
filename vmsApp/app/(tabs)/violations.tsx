@@ -10,7 +10,9 @@ import {
 import { api } from '@/lib/api';
 import { Calendar, User, FileWarning, Shield } from 'lucide-react-native';
 import { ViolationRecord } from '@/lib/types';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import React from 'react';
 export default function ViolationsHistoryScreen() {
   const [violations, setViolations] = useState<ViolationRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,22 +23,29 @@ export default function ViolationsHistoryScreen() {
   }, []);
   type Tab = 'new' | 'history';
   const [activeTab, setActiveTab] = useState<Tab>('new');
+  const [full_name, setFullName] = useState('');
   useEffect(() => {
     if (activeTab === 'history') {
       loadViolations();
     }
   }, [activeTab]);
 
-  const token = localStorage.getItem('token');
-  const full_name = localStorage.getItem('teacher_name');
+  const token = AsyncStorage.getItem('token');
+  //const full_name = AsyncStorage.getItem('teacher_name');
   const loadViolations = async () => {
     try {
+      const token = await AsyncStorage.getItem('token');
+      const full_name = await AsyncStorage.getItem('teacher_name');
+      setFullName(full_name || '');
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/teacher/violations`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://167.88.39.169:5000/api/teacher/violations`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error('Failed to fetch records');
 
@@ -57,6 +66,13 @@ export default function ViolationsHistoryScreen() {
   useEffect(() => {
     loadViolations();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadViolations();
+    }, [])
+  );
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
