@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { School, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { signIn, signUp } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -18,11 +17,14 @@ const LoginPage = () => {
     setSuccess("");
 
     try {
-      const res = await fetch("http://167.88.39.169:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await res.json();
 

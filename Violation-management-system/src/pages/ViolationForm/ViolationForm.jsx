@@ -8,8 +8,6 @@ import {
   AlertTriangle,
   User,
   Calendar,
-  BookOpen,
-  Users,
 } from "lucide-react";
 
 import Header from "../../components/Header";
@@ -36,7 +34,6 @@ const ViolationForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
   const [level, setLevels] = useState([]);
-  const [schoolName, setSchoolName] = useState([]);
   const [alert, setAlert] = useState({
     show: false,
     message: "",
@@ -62,11 +59,14 @@ const ViolationForm = () => {
   const fetchViolations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://167.88.39.169:5000/api/violations`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/violations`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch violations");
 
@@ -83,11 +83,14 @@ const ViolationForm = () => {
   const fetchPunishments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://167.88.39.169:5000/api/punishments`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/punishments`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch punishments");
 
@@ -104,11 +107,14 @@ const ViolationForm = () => {
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://167.88.39.169:5000/api/teachers/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/teachers/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch teachers");
 
@@ -126,7 +132,7 @@ const ViolationForm = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://167.88.39.169:5000/api/violation-records/school`,
+        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/school`,
         {
           headers: {
             Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
@@ -150,11 +156,14 @@ const ViolationForm = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://167.88.39.169:5000/api/students/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/students/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch students");
 
@@ -171,11 +180,14 @@ const ViolationForm = () => {
   const fetchLevels = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://167.88.39.169:5000/api/levels/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/levels/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch levels");
 
@@ -265,22 +277,11 @@ const ViolationForm = () => {
     }
   };
 
-  const handleStudentSelect = (student) => {
-    if (student) {
-      setFormData((prev) => ({
-        ...prev,
-        firstName: student.first_name,
-        lastName: student.last_name,
-        level: student.level,
-      }));
-    }
-  };
-
   const handleSubmitViolation = async (e) => {
     e.preventDefault();
     try {
       const res = await fetch(
-        "http://167.88.39.169:5000/api/violation-records",
+        "https://vms-alhikma.cloud/vms-alhikma/api/violation-records",
         {
           method: "POST",
           headers: {
@@ -337,6 +338,7 @@ const ViolationForm = () => {
     }
   };
   const handlePrintPDF = (record) => {
+    if (!record) return;
     const pdfData = {
       firstName: record.students.first_name,
       lastName: record.students.last_name,
@@ -365,21 +367,23 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://167.88.39.169:5000/api/punishments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ punishment_name: newPunishment }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/punishments",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ punishment_name: newPunishment }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la punition");
       }
 
       const data = await res.json();
-      console.log("Punishment added:", data);
 
       showAlert("Sanction ajoutée avec succès", "success");
       fetchPunishments();
@@ -405,21 +409,23 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://167.88.39.169:5000/api/violations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ violation_name: newViolation }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/violations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ violation_name: newViolation }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la violation");
       }
 
       const data = await res.json();
-      console.log("violation added:", data);
 
       showAlert("Violation ajoutée avec succès", "success");
       fetchViolations();
@@ -441,7 +447,7 @@ const ViolationForm = () => {
 
     try {
       const res = await fetch(
-        `http://167.88.39.169:5000/api/violation-records/${violationId}`,
+        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/${violationId}`,
         {
           method: "DELETE",
           headers: {
