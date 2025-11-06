@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { api } from '@/lib/api';
 import { Calendar, User, FileWarning, Shield } from 'lucide-react-native';
 import { ViolationRecord } from '@/lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,7 +29,7 @@ export default function ViolationsHistoryScreen() {
     }
   }, [activeTab]);
 
-  const token = AsyncStorage.getItem('token');
+  // const token = AsyncStorage.getItem('token');
   //const full_name = AsyncStorage.getItem('teacher_name');
   const loadViolations = async () => {
     try {
@@ -39,7 +38,7 @@ export default function ViolationsHistoryScreen() {
       setFullName(full_name || '');
       setLoading(true);
       const res = await fetch(
-        `http://167.88.39.169:5000/api/teacher/violations`,
+        `https://vms-alhikma.cloud/vms-alhikma/api/teacher/violations`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -50,7 +49,6 @@ export default function ViolationsHistoryScreen() {
       if (!res.ok) throw new Error('Failed to fetch records');
 
       const data = await res.json();
-
       setViolations(data);
     } catch (error) {
       console.error(error);
@@ -94,7 +92,7 @@ export default function ViolationsHistoryScreen() {
           </Text>
         </View>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{item.students?.level}</Text>
+          <Text style={styles.badgeText}>{item.level}</Text>
         </View>
       </View>
 

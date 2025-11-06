@@ -30,7 +30,8 @@
       }
     },
     "android": {
-      "package": "com.alhikma.vmsapp"
+      "package": "com.alhikma.vmsapp",
+      "usesCleartextTraffic": true
     },
     "extra": {
       "router": {},

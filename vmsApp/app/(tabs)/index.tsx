@@ -9,17 +9,13 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
-  Alert,
 } from 'react-native';
-import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 import { FileText, User, ChevronDown, X } from 'lucide-react-native';
 import { Student, Violation, Punishment, Level } from '@/lib/types';
-import { router } from 'expo-router';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function NewViolationScreen() {
-  const { teacher } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [level, setLevel] = useState('');
@@ -44,7 +40,6 @@ export default function NewViolationScreen() {
   const [showViolationModal, setShowViolationModal] = useState(false);
   const [showPunishmentModal, setShowPunishmentModal] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
-  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -62,9 +57,9 @@ export default function NewViolationScreen() {
   const loadViolationsAndPunishments = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log(token);
+
       const full_name = await AsyncStorage.getItem('teacher_name');
-      console.log(full_name);
+
       setFullName(full_name || '');
       if (!token) {
         console.error('No token found in storage. Redirecting to login.');
@@ -72,17 +67,17 @@ export default function NewViolationScreen() {
       }
 
       const [violationsData, punishmentsData, levelsData] = await Promise.all([
-        fetch('http://167.88.39.169:5000/api/violations', {
+        fetch('https://vms-alhikma.cloud/vms-alhikma/api/violations', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }).then((res) => res.json()),
-        fetch('http://167.88.39.169:5000/api/punishments', {
+        fetch('https://vms-alhikma.cloud/vms-alhikma/api/punishments', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }).then((res) => res.json()),
-        fetch('http://167.88.39.169:5000/api/levels/school', {
+        fetch('https://vms-alhikma.cloud/vms-alhikma/api/levels/school', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -108,11 +103,14 @@ export default function NewViolationScreen() {
       return;
     }
     try {
-      const res = await fetch(`http://167.88.39.169:5000/api/students/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/students/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error('Failed to fetch students');
       const data = await res.json();
@@ -178,7 +176,7 @@ export default function NewViolationScreen() {
 
     try {
       const res = await fetch(
-        'http://167.88.39.169:5000/api/violation-records',
+        'https://vms-alhikma.cloud/vms-alhikma/api/violation-records',
         {
           method: 'POST',
           headers: {
