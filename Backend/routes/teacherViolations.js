@@ -42,7 +42,7 @@ router.get("/", verifyToken, async (req, res) => {
     const teacher_id = req.user.id;
     const { from, to, violation_id, student_id } = req.query;
 
-    let sql = `SELECT vr.*, s.first_name, s.last_name, v.violation_name, p.punishment_name
+    let sql = `SELECT vr.*, s.first_name, s.last_name, s.level, v.violation_name, p.punishment_name
 FROM violation_records vr
 JOIN students s ON vr.student_id = s.id
 LEFT JOIN violations v ON vr.violation_id = v.id
