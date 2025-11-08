@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Registration</title>
+    <style>
+        /* Basic styling for readability - feel free to customize */
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        form { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input[type="email"], input[type="password"], select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        #message { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+    <form id="registrationForm">
+        <h2>Register Teacher</h2>
+
+        <div id="message"></div>
+
+        <label for="teacher_id">Teacher</label>
+        <select id="teacher_id" name="teacher_id" required>
+            <option value="" disabled selected>Loading teachers...</option>
+        </select>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required />
+
+        <button type="submit">Register</button>
+    </form>
+
+    <script>
+        const API_BASE_URL = "https://vms-alhikma.cloud/vms-alhikma/api";
+        const TEACHERS_ENDPOINT = `${API_BASE_URL}/teacherRegister`;
+        const REGISTER_ENDPOINT = `${API_BASE_URL}/register`; // Assuming this is your final registration API endpoint
+
+        const form = document.getElementById("registrationForm");
+        const select = document.getElementById("teacher_id");
+        const messageDiv = document.getElementById("message");
+
+        // --- Function to fetch and populate the select field ---
+        function loadTeachers() {
+            fetch(TEACHERS_ENDPOINT)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return res.json();
+                })
+                .then(teachers => {
+                    // Clear the initial "Loading..." option
+                    select.innerHTML = '<option value="" disabled selected>Select Teacher</option>';
+                    teachers.forEach(t => {
+                        const opt = document.createElement("option");
+                        // Use the ID for the backend submission
+                        opt.value = t.id;
+                        // Use the full_name for display
+                        opt.textContent = t.full_name;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error("Error loading teachers:", err);
+                    select.innerHTML = '<option value="" disabled selected>Error loading data</option>';
+                    showMessage("Error loading teacher data. Please try again.", 'error');
+                });
+        }
+        
+        // --- Function to display success/error messages ---
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+        }
+
+        // --- Function to handle form submission via Fetch API ---
+        form.addEventListener("submit", function(event) {
+            event.preventDefault(); // Stop the default form submission (page reload)
+            
+            // Collect form data
+            const formData = {
+                teacher_id: select.value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            fetch(REGISTER_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(res => {
+                if (res.ok) {
+                    // Handle successful registration (e.g., status 200 or 201)
+                    showMessage("Teacher successfully registered!", 'success');
+                    form.reset(); // Clear the form
+                    // Optionally, remove the teacher from the list if they can only register once
+                } else {
+                    // Handle errors (e.g., status 400, 409)
+                    // You might need to check if the backend returns a JSON error message
+                    res.json().then(data => {
+                        showMessage(`Registration failed: ${data.message || res.statusText}`, 'error');
+                    }).catch(() => {
+                        showMessage(`Registration failed with status code ${res.status}.`, 'error');
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Registration failed:', err);
+                showMessage("A network error occurred during registration.", 'error');
+            });
+        });
+
+        // Load data when the page first loads
+        loadTeachers();
+    </script>
+</body>
+</html>

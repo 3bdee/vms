@@ -340,12 +340,12 @@ const ViolationForm = () => {
   const handlePrintPDF = (record) => {
     if (!record) return;
     const pdfData = {
-      firstName: record.students.first_name,
-      lastName: record.students.last_name,
-      level: record.students.level,
-      violationName: record.violations.violation_name,
-      punishmentName: record.punishments.punishment_name,
-      teacherName: record.teachers.full_name,
+      firstName: record.first_name,
+      lastName: record.last_name,
+      level: record.level,
+      violationName: record.violation_name,
+      punishmentName: record.punishment_name,
+      teacherName: record.teacher_name,
       violationTime: record.violation_time,
     };
 
