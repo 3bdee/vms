@@ -16,6 +16,19 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
+router.get("/school", authenticate, async (req, res) => {
+  const schoolId = req.user.school_id;
+  try {
+    const [rows] = await db.query(
+      "SELECT school_name FROM schools WHERE id = ?",
+      [schoolId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 router.post("/", authenticate, async (req, res) => {
   const { school_name } = req.body;
   const id = uuidv4();

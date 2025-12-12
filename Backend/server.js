@@ -14,6 +14,7 @@ import violationRecordsRoutes from "./routes/violationRecords.js";
 import teacherAuthRoutes from "./routes/teacherAuth.js";
 import teacherViolationsRoutes from "./routes/teacherViolations.js";
 import statisticsRoutes from "./routes/statistics.js";
+import absencesRoutes from "./routes/absences.js";
 
 dotenv.config();
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/statistics", statisticsRoutes);
 
 app.use("/api/auth", teacherAuthRoutes);
 app.use("/api/teacher/violations", teacherViolationsRoutes);
+app.use("/api/absences", absencesRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

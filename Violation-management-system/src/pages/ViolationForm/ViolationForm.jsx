@@ -8,11 +8,24 @@ import {
   AlertTriangle,
   User,
   Calendar,
+  CalendarDays,
 } from "lucide-react";
-
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import { autoTable } from "jspdf-autotable";
 import Header from "../../components/Header";
 import ViolationAlert from "../../components/ViolationAlert";
 import { generateViolationPDF } from "../../components/PDFGenerator";
+
+const EXCLUDED_FIELDS = [
+  "id",
+  "student_id",
+  "teacher_id",
+  "violation_id",
+  "punishment_id",
+  "school_id",
+  "created_at",
+];
 
 const ViolationForm = () => {
   const [formData, setFormData] = useState({
@@ -34,6 +47,13 @@ const ViolationForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
   const [level, setLevels] = useState([]);
+  const [schoolName, setSchoolName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filters, setFilters] = useState({
+    startDate: "",
+    endDate: "",
+  });
   const [alert, setAlert] = useState({
     show: false,
     message: "",
@@ -52,6 +72,14 @@ const ViolationForm = () => {
     addViolationRecord: false,
   });
 
+  const cleanForExport = (records) => {
+    return records.map((r) => {
+      const copy = { ...r };
+      EXCLUDED_FIELDS.forEach((field) => delete copy[field]);
+      return copy;
+    });
+  };
+
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
@@ -59,14 +87,11 @@ const ViolationForm = () => {
   const fetchViolations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/violations`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/violations`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to fetch violations");
 
@@ -83,14 +108,11 @@ const ViolationForm = () => {
   const fetchPunishments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/punishments`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/punishments`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to fetch punishments");
 
@@ -107,14 +129,11 @@ const ViolationForm = () => {
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/teachers/school`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/teachers/school`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to fetch teachers");
 
@@ -132,7 +151,7 @@ const ViolationForm = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/school`,
+        `http://localhost:5000/api/violation-records/school`,
         {
           headers: {
             Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
@@ -156,14 +175,11 @@ const ViolationForm = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/students/school`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/students/school`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to fetch students");
 
@@ -177,17 +193,35 @@ const ViolationForm = () => {
     }
   };
 
+  const fetchSchoolName = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`http://localhost:5000/api/schools/school`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch students");
+
+      const data = await res.json();
+      setSchoolName(data[0].school_name);
+    } catch (error) {
+      console.error(error);
+      showAlert("Erreur lors du chargement des school name", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchLevels = async () => {
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/levels/school`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/levels/school`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) throw new Error("Failed to fetch levels");
 
@@ -208,6 +242,7 @@ const ViolationForm = () => {
     fetchStudents();
     fetchLevels();
     fetchPunishments();
+    fetchSchoolName();
   }, []);
 
   useEffect(() => {
@@ -237,9 +272,33 @@ const ViolationForm = () => {
     if (filterLevel) {
       filtered = filtered.filter((record) => record?.level === filterLevel);
     }
+    if (startDate || endDate) {
+      filtered = filtered.filter((record) => {
+        const recordDate = new Date(record.violation_time).setHours(0, 0, 0, 0);
 
+        const start = startDate
+          ? new Date(startDate).setHours(0, 0, 0, 0)
+          : null;
+
+        const end = endDate
+          ? new Date(endDate).setHours(23, 59, 59, 999)
+          : null;
+
+        if (start && recordDate < start) return false;
+        if (end && recordDate > end) return false;
+
+        return true;
+      });
+    }
     setFilteredRecords(filtered);
-  }, [searchTerm, filterLevel, violationRecords]);
+  }, [searchTerm, filterLevel, startDate, endDate, violationRecords]);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterLevel("");
+    setStartDate("");
+    setEndDate("");
+  };
 
   const showAlert = (message, type = "info") => {
     setAlert({ show: true, message, type });
@@ -277,29 +336,56 @@ const ViolationForm = () => {
     }
   };
 
+  const exportExcel = (data) => {
+    const exportData = cleanForExport(filteredRecords);
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Violations");
+
+    XLSX.writeFile(workbook, "violations_export.xlsx");
+  };
+
+  const exportPDF = () => {
+    const exportData = cleanForExport(filteredRecords);
+    const doc = new jsPDF();
+
+    // extract columns
+    const columns = Object.keys(exportData[0] || {});
+
+    const rows = exportData.map((item) => Object.values(item));
+
+    doc.text("Violation Records", 14, 15);
+
+    autoTable(doc, {
+      startY: 20,
+      head: [columns],
+      body: rows,
+    });
+
+    doc.save("violation_records.pdf");
+  };
+
   const handleSubmitViolation = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        "https://vms-alhikma.cloud/vms-alhikma/api/violation-records",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            level: formData.level,
-            violation_id: formData.violationId,
-            punishment_id: formData.punishmentId,
-            violation_time: formData.violationTime,
-            teacher_id: formData.teacherId,
-            school_id: school_id,
-          }),
-        }
-      );
+      const res = await fetch("http://localhost:5000/api/violation-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          level: formData.level,
+          violation_id: formData.violationId,
+          punishment_id: formData.punishmentId,
+          violation_time: formData.violationTime,
+          teacher_id: formData.teacherId,
+          school_id: school_id,
+        }),
+      });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur serveur");
@@ -367,17 +453,14 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "https://vms-alhikma.cloud/vms-alhikma/api/punishments",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ punishment_name: newPunishment }),
-        }
-      );
+      const res = await fetch("http://localhost:5000/api/punishments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ punishment_name: newPunishment }),
+      });
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la punition");
@@ -409,17 +492,14 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "https://vms-alhikma.cloud/vms-alhikma/api/violations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ violation_name: newViolation }),
-        }
-      );
+      const res = await fetch("http://localhost:5000/api/violations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ violation_name: newViolation }),
+      });
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la violation");
@@ -447,7 +527,7 @@ const ViolationForm = () => {
 
     try {
       const res = await fetch(
-        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/${violationId}`,
+        `http://localhost:5000/api/violation-records/${violationId}`,
         {
           method: "DELETE",
           headers: {
@@ -508,7 +588,7 @@ const ViolationForm = () => {
           <div className="card-header">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="card-title">{}</h2>
+                <h2 className="card-title">{schoolName}</h2>
                 <p className="card-subtitle">
                   Enregistrer et gérer les violations des élèves
                 </p>
@@ -573,6 +653,46 @@ const ViolationForm = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Filter by Start Date */}
+              <div className="flex items-center gap-4">
+                <label className="form-label">
+                  <CalendarDays size={16} />
+                  Start
+                </label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              {/* Filter by End Date */}
+              <div className="flex items-center gap-4">
+                <label className="form-label">
+                  <CalendarDays size={16} />
+                  End{" "}
+                </label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <button onClick={clearFilters} className="btn btn-secondary">
+                Clear Filters
+              </button>
+              <button
+                onClick={() => exportExcel(filteredRecords)}
+                className="btn btn-secondary"
+              >
+                Export Excel
+              </button>
+              <button onClick={exportPDF} className="btn btn-secondary">
+                Export PDF
+              </button>
             </div>
 
             {/* Records Table */}

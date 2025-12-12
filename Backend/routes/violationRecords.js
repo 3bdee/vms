@@ -2,7 +2,6 @@ import express from "express";
 import db from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 import { authenticate } from "../middleware/authMiddleware.js";
-
 const router = express.Router();
 
 router.get("/school", authenticate, async (req, res) => {
@@ -82,6 +81,39 @@ router.post("/", authenticate, async (req, res) => {
       ]
     );
 
+    // Get student + parent phone
+    const [student] = await db.query(
+      "SELECT first_name, last_name, parent_phone FROM students WHERE id = ?",
+      [student_id]
+    );
+
+    const [violation] = await db.query(
+      "SELECT violation_name FROM violations WHERE id = ?",
+      [violation_id]
+    );
+
+    const [punishment] = await db.query(
+      "SELECT punishment_name FROM punishments WHERE id = ?",
+      [punishment_id]
+    );
+
+    // Build message
+    const message = `
+🔔 Notification de l'école
+
+Votre enfant ${student.first_name} ${student.last_name} a reçu une violation :
+
+Violation: ${violation.name}
+Punition: ${punishment.name}
+Date: ${violation_time}
+
+Merci de suivre son comportement.
+  `;
+
+    // Send WhatsApp message
+    if (student.parent_phone) {
+      await sendWhatsAppMessage(student.parent_phone, message);
+    }
     // 3️⃣ Count total violations for that student
     const [countRows] = await db.query(
       "SELECT COUNT(*) AS count FROM violation_records WHERE student_id = ?",

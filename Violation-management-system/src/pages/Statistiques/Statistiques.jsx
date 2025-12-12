@@ -31,7 +31,7 @@ const COLORS = [
   "#a8edea",
   "#fed6e3",
 ];
-const API_URL = "https://vms-alhikma.cloud/vms-alhikma/api/statistics";
+const API_URL = "http://localhost:5000/api/statistics";
 
 const token = localStorage.getItem("token");
 const schoolId = localStorage.getItem("school_id");
@@ -55,21 +55,27 @@ const Statistiques = () => {
   }
 
   const fetchStats = async () => {
-    const headers = { Authorization: `Bearer ${token}` };
-    const [resTotals, res1, res2, res3, res4] = await Promise.all([
-      fetch(`${API_URL}/totals/${schoolId}`, { headers }),
-      fetch(`${API_URL}/monthly/${schoolId}`, { headers }),
-      fetch(`${API_URL}/top-students/${schoolId}`, { headers }),
-      fetch(`${API_URL}/top-teachers/${schoolId}`, { headers }),
-      fetch(`${API_URL}/level/${schoolId}`, { headers }),
-    ]);
-    setTotals(await resTotals.json());
-    setStats({
-      monthly: await res1.json(),
-      teachers: await res3.json(),
-      students: await res2.json(),
-      levels: await res4.json(),
-    });
+    setLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const [resTotals, res1, res2, res3, res4] = await Promise.all([
+        fetch(`${API_URL}/totals/${schoolId}`, { headers }),
+        fetch(`${API_URL}/monthly/${schoolId}`, { headers }),
+        fetch(`${API_URL}/top-students/${schoolId}`, { headers }),
+        fetch(`${API_URL}/top-teachers/${schoolId}`, { headers }),
+        fetch(`${API_URL}/level/${schoolId}`, { headers }),
+      ]);
+      setTotals(await resTotals.json());
+      setStats({
+        monthly: await res1.json(),
+        teachers: await res3.json(),
+        students: await res2.json(),
+        levels: await res4.json(),
+      });
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -82,7 +88,7 @@ const Statistiques = () => {
         <Header />
         <div className="main-container">
           <div className="loading">
-            <div className="spinner"></div>
+            <div className="spinner">Loading .........</div>
           </div>
         </div>
       </div>

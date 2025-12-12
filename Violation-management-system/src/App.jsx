@@ -3,13 +3,16 @@ import Statistiques from "./pages/Statistiques/Statistiques";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage/LoginPage";
-
+import PublicRoute from "./components/PublicRoute";
 import React from "react";
+import AddAbsence from "./pages/AddAbsence/AddAbsence";
 
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+      </Route>
       <Route
         path="/"
         element={
@@ -23,6 +26,22 @@ function App() {
         element={
           <ProtectedRoute>
             <Statistiques />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/AddAbscence"
+        element={
+          <ProtectedRoute>
+            <AddAbsence />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <ViolationForm />
           </ProtectedRoute>
         }
       />

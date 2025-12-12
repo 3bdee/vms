@@ -84,3 +84,17 @@ PRIMARY KEY (user_id, school_id),
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 );
+
+CREATE TABLE absences (
+  id VARCHAR(36) PRIMARY KEY,
+  student_id CHAR(36) NOT NULL,
+  teacher_id CHAR(36) NOT NULL,
+  school_id CHAR(36) NOT NULL,
+  absence_date DATE NOT NULL,
+  justification TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (student_id) REFERENCES students(id),
+  FOREIGN KEY (teacher_id) REFERENCES teachers(id),
+  FOREIGN KEY (school_id) REFERENCES schools(id)
+);
