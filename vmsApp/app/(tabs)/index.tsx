@@ -11,7 +11,7 @@ import {
   Pressable,
 } from 'react-native';
 import { FileText, User, ChevronDown, X } from 'lucide-react-native';
-import { Student, Violation, Punishment, Level } from '@/lib/types';
+import { Student, Violation, Level } from '@/lib/types';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,8 +23,7 @@ export default function NewViolationScreen() {
     null
   );
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
-  const [selectedPunishment, setSelectedPunishment] =
-    useState<Punishment | null>(null);
+
   const [violationTime, setViolationTime] = useState(
     new Date().toISOString().slice(0, 16)
   );
@@ -34,11 +33,9 @@ export default function NewViolationScreen() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const [violations, setViolations] = useState<Violation[]>([]);
-  const [punishments, setPunishments] = useState<Punishment[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
 
   const [showViolationModal, setShowViolationModal] = useState(false);
-  const [showPunishmentModal, setShowPunishmentModal] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -66,13 +63,8 @@ export default function NewViolationScreen() {
         return;
       }
 
-      const [violationsData, punishmentsData, levelsData] = await Promise.all([
+      const [violationsData, levelsData] = await Promise.all([
         fetch('https://vms-alhikma.cloud/vms-alhikma/api/violations', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).then((res) => res.json()),
-        fetch('https://vms-alhikma.cloud/vms-alhikma/api/punishments', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -83,7 +75,6 @@ export default function NewViolationScreen() {
           },
         }).then((res) => res.json()),
       ]);
-      setPunishments(punishmentsData);
       setViolations(violationsData);
       setLevels(levelsData);
     } catch (error) {
@@ -155,14 +146,8 @@ export default function NewViolationScreen() {
     const token = await AsyncStorage.getItem('token');
     const schoolId = await AsyncStorage.getItem('school_id');
     const teacherId = await AsyncStorage.getItem('teacher_id');
-    if (
-      !firstName ||
-      !lastName ||
-      !level ||
-      !selectedViolation ||
-      !selectedPunishment ||
-      !selectedLevel
-    ) {
+
+    if (!firstName || !lastName || !selectedViolation || !selectedLevel) {
       setError('Veuillez remplir tous les champs');
       return;
     }
@@ -176,7 +161,7 @@ export default function NewViolationScreen() {
 
     try {
       const res = await fetch(
-        'https://vms-alhikma.cloud/vms-alhikma/api/violation-records',
+        'https://vms-alhikma.cloud/vms-alhikma/api/teacher/violations',
         {
           method: 'POST',
           headers: {
@@ -186,7 +171,6 @@ export default function NewViolationScreen() {
           body: JSON.stringify({
             teacher_id: teacherId,
             violation_id: selectedViolation.id,
-            punishment_id: selectedPunishment.id,
             level: selectedLevel.level_name,
             first_name: firstName,
             last_name: lastName,
@@ -211,11 +195,9 @@ export default function NewViolationScreen() {
       setLastName('');
       setLevel('');
       setSelectedViolation(null);
-      setSelectedPunishment(null);
       setViolationTime(new Date().toISOString().slice(0, 16));
       setSelectedStudent(null);
       setSelectedLevel(null);
-
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       setError("Erreur lors de l'enregistrement de la violation");
@@ -300,45 +282,6 @@ export default function NewViolationScreen() {
     </Modal>
   );
 
-  const PunishmentModal = () => (
-    <Modal
-      visible={showPunishmentModal}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setShowPunishmentModal(false)}
-    >
-      <Pressable
-        style={styles.modalOverlay}
-        onPress={() => setShowPunishmentModal(false)}
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Sélectionner une sanction</Text>
-            <TouchableOpacity onPress={() => setShowPunishmentModal(false)}>
-              <X size={24} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalList}>
-            {punishments.map((punishment) => (
-              <TouchableOpacity
-                key={punishment.id}
-                style={styles.modalItem}
-                onPress={() => {
-                  setSelectedPunishment(punishment);
-                  setShowPunishmentModal(false);
-                }}
-              >
-                <Text style={styles.modalItemText}>
-                  {punishment.punishment_name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </Pressable>
-    </Modal>
-  );
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
@@ -368,7 +311,7 @@ export default function NewViolationScreen() {
               style={styles.input}
               placeholder="Entrez le nom"
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(text) => setLastName(text)}
               editable={!loading}
             />
           </View>
@@ -410,27 +353,6 @@ export default function NewViolationScreen() {
                 {selectedViolation
                   ? selectedViolation.violation_name
                   : 'Sélectionner une violation'}
-              </Text>
-              <ChevronDown size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sanction *</Text>
-            <TouchableOpacity
-              style={styles.selectButton}
-              onPress={() => setShowPunishmentModal(true)}
-              disabled={loading}
-            >
-              <Text
-                style={[
-                  styles.selectButtonText,
-                  !selectedPunishment && styles.placeholderText,
-                ]}
-              >
-                {selectedPunishment
-                  ? selectedPunishment.punishment_name
-                  : 'Sélectionner une sanction'}
               </Text>
               <ChevronDown size={20} color="#6B7280" />
             </TouchableOpacity>
@@ -568,7 +490,6 @@ export default function NewViolationScreen() {
         </View>
       )}
       <ViolationModal />
-      <PunishmentModal />
       <LevelModal />
     </ScrollView>
   );

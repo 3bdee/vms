@@ -7,15 +7,63 @@ const router = express.Router();
 
 // POST /api/teacher/violations -> create record assigned to logged-in teacher
 router.post("/", verifyToken, async (req, res) => {
+  const teacher_id = req.user.id;
+  const {
+    violation_id,
+    violation_time,
+    school_id,
+    level,
+    first_name,
+    last_name,
+  } = req.body;
+
   try {
-    const teacher_id = req.user.id;
-    const {
-      student_id,
+    // 1️⃣ Find or create student
+    let student_id;
+    const [existingStudents] = await db.query(
+      `SELECT id FROM students 
+           WHERE first_name = ? AND last_name = ? AND level = ? AND school_id = ?`,
+      [first_name, last_name, level, school_id]
+    );
+
+    if (existingStudents.length > 0) {
+      student_id = existingStudents[0].id;
+    } else {
+      student_id = uuidv4();
+      await db.query(
+        `INSERT INTO students (id, first_name, last_name, level, school_id)
+             VALUES (?, ?, ?, ?, ?)`,
+        [student_id, first_name, last_name, level, school_id]
+      );
+    }
+
+    // 2️⃣ Get violation points
+    const [vp] = await db.query(`SELECT point FROM violations WHERE id = ?`, [
       violation_id,
-      punishment_id,
-      violation_time,
-      school_id,
-    } = req.body;
+    ]);
+
+    // 2️⃣ Get violation points
+    const [studentsPoints] = await db.query(
+      `SELECT points FROM students WHERE id = ?`,
+      [student_id]
+    );
+    const currentsPoints = studentsPoints[0].points;
+    const violationPoints = vp[0].point;
+    // 4️⃣ Update student points
+    const newPoints = currentsPoints + violationPoints;
+
+    await db.query(`UPDATE students SET points = ? WHERE id = ?`, [
+      newPoints,
+      student_id,
+    ]);
+
+    const [punishmentRows] = await db.query(
+      `SELECT id FROM punishments WHERE min_point = ? LIMIT 1`,
+      [newPoints]
+    );
+
+    const punishment_id = punishmentRows[0].id;
+
     const id = uuidv4();
     await db.query(
       "INSERT INTO violation_records (id, student_id, teacher_id, violation_id, punishment_id, violation_time, school_id) VALUES (?, ?, ?, ?, ?, ?, ?)",

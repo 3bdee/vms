@@ -11,7 +11,7 @@ function Header() {
     localStorage.removeItem("school_id");
     navigate("/login");
   };
-
+ 
   return (
     <header className="header">
       <div className="logo">

@@ -25,6 +25,7 @@ const EXCLUDED_FIELDS = [
   "punishment_id",
   "school_id",
   "created_at",
+  "points_after",
 ];
 
 const ViolationForm = () => {
@@ -34,7 +35,6 @@ const ViolationForm = () => {
     level: "",
     violationId: "",
     teacherId: "",
-    punishmentId: "",
     violationTime: new Date().toISOString().slice(0, 16), // Initialize with current date/time
   });
 
@@ -336,16 +336,6 @@ const ViolationForm = () => {
     }
   };
 
-  const exportExcel = (data) => {
-    const exportData = cleanForExport(filteredRecords);
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Violations");
-
-    XLSX.writeFile(workbook, "violations_export.xlsx");
-  };
-
   const exportPDF = () => {
     const exportData = cleanForExport(filteredRecords);
     const doc = new jsPDF();
@@ -563,6 +553,7 @@ const ViolationForm = () => {
   return (
     <div>
       <Header />
+
       <div className="main-container">
         {/* Alert */}
         {alert.show && (
@@ -681,17 +672,11 @@ const ViolationForm = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              <button onClick={clearFilters} className="btn btn-secondary">
-                Clear Filters
-              </button>
-              <button
-                onClick={() => exportExcel(filteredRecords)}
-                className="btn btn-secondary"
-              >
-                Export Excel
-              </button>
               <button onClick={exportPDF} className="btn btn-secondary">
                 Export PDF
+              </button>
+              <button onClick={clearFilters} className="btn btn-secondary">
+                Clear Filters
               </button>
             </div>
 
@@ -705,6 +690,7 @@ const ViolationForm = () => {
                     <th>Violation</th>
                     <th>Enseignant</th>
                     <th>Sanction</th>
+                    <th>Points</th>
                     <th>Date/Heure</th>
                     <th>Actions</th>
                   </tr>
@@ -722,6 +708,7 @@ const ViolationForm = () => {
                       <td>{record.violation_name}</td>
                       <td>{record.teacher_name}</td>
                       <td>{record.punishment_name}</td>
+                      <td>{record.points}</td>
                       <td>
                         <div className="flex items-center gap-2">
                           <Calendar size={16} color="#6b7280" />
@@ -897,25 +884,6 @@ const ViolationForm = () => {
                       {violations.map((violation) => (
                         <option key={violation.id} value={violation.id}>
                           {violation.violation_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Sanction</label>
-                    <select
-                      className="form-select"
-                      value={formData.punishmentId}
-                      onChange={(e) =>
-                        handleInputChange("punishmentId", e.target.value)
-                      }
-                      required
-                    >
-                      <option value="">Sélectionner une sanction</option>
-                      {punishments.map((punishment) => (
-                        <option key={punishment.id} value={punishment.id}>
-                          {punishment.punishment_name}
                         </option>
                       ))}
                     </select>

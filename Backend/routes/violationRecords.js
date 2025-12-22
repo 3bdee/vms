@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/school", authenticate, async (req, res) => {
   const schoolId = req.user.school_id;
   const sql = `
-SELECT vr.*, s.first_name, s.last_name, s.level, t.full_name AS teacher_name, v.violation_name, p.punishment_name
+SELECT vr.*, s.first_name, s.points ,s.last_name, s.level, t.full_name AS teacher_name, v.violation_name, p.punishment_name
 FROM violation_records vr
 JOIN students s ON vr.student_id = s.id
 LEFT JOIN teachers t ON vr.teacher_id = t.id
@@ -26,7 +26,6 @@ router.post("/", authenticate, async (req, res) => {
     last_name,
     level,
     violation_id,
-    punishment_id,
     violation_time,
     teacher_id,
     school_id,
@@ -37,7 +36,6 @@ router.post("/", authenticate, async (req, res) => {
     !last_name ||
     !level ||
     !violation_id ||
-    !punishment_id ||
     !teacher_id ||
     !school_id
   ) {
@@ -64,6 +62,33 @@ router.post("/", authenticate, async (req, res) => {
       );
     }
 
+    // 2️⃣ Get violation points
+    const [vp] = await db.query(`SELECT point FROM violations WHERE id = ?`, [
+      violation_id,
+    ]);
+
+    // 2️⃣ Get violation points
+    const [studentsPoints] = await db.query(
+      `SELECT points FROM students WHERE id = ?`,
+      [student_id]
+    );
+    const currentsPoints = studentsPoints[0].points;
+    const violationPoints = vp[0].point;
+    // 4️⃣ Update student points
+    const newPoints = currentsPoints + violationPoints;
+
+    await db.query(`UPDATE students SET points = ? WHERE id = ?`, [
+      newPoints,
+      student_id,
+    ]);
+
+    const [punishmentRows] = await db.query(
+      `SELECT id FROM punishments WHERE min_point = ? LIMIT 1`,
+      [newPoints]
+    );
+
+    const punishment_id = punishmentRows[0].id;
+
     // 2️⃣ Insert violation record
     const record_id = uuidv4();
     await db.query(
@@ -81,39 +106,6 @@ router.post("/", authenticate, async (req, res) => {
       ]
     );
 
-    // Get student + parent phone
-    const [student] = await db.query(
-      "SELECT first_name, last_name, parent_phone FROM students WHERE id = ?",
-      [student_id]
-    );
-
-    const [violation] = await db.query(
-      "SELECT violation_name FROM violations WHERE id = ?",
-      [violation_id]
-    );
-
-    const [punishment] = await db.query(
-      "SELECT punishment_name FROM punishments WHERE id = ?",
-      [punishment_id]
-    );
-
-    // Build message
-    const message = `
-🔔 Notification de l'école
-
-Votre enfant ${student.first_name} ${student.last_name} a reçu une violation :
-
-Violation: ${violation.name}
-Punition: ${punishment.name}
-Date: ${violation_time}
-
-Merci de suivre son comportement.
-  `;
-
-    // Send WhatsApp message
-    if (student.parent_phone) {
-      await sendWhatsAppMessage(student.parent_phone, message);
-    }
     // 3️⃣ Count total violations for that student
     const [countRows] = await db.query(
       "SELECT COUNT(*) AS count FROM violation_records WHERE student_id = ?",
@@ -122,7 +114,7 @@ Merci de suivre son comportement.
     const newViolationCount = countRows[0].count;
 
     // 4️⃣ Respond to frontend
-    res.json({ id: record_id, student_id, newViolationCount });
+    res.json({ id: record_id, student_id, newViolationCount, newPoints });
   } catch (err) {
     console.error("Error creating violation record:", err);
     res.status(500).json({ error: "Failed to create violation record" });

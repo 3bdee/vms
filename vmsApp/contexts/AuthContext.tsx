@@ -96,5 +96,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     "production": {}
   }
 }
-
+{
+  "build": {
+    "preview": {
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {}
+  }
+}
 */

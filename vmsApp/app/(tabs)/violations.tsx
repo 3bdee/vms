@@ -29,8 +29,6 @@ export default function ViolationsHistoryScreen() {
     }
   }, [activeTab]);
 
-  // const token = AsyncStorage.getItem('token');
-  //const full_name = AsyncStorage.getItem('teacher_name');
   const loadViolations = async () => {
     try {
       const token = await AsyncStorage.getItem('token');

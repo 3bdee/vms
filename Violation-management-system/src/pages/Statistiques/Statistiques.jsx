@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -77,7 +77,18 @@ const Statistiques = () => {
       setLoading(false);
     }
   };
-
+  if (!stats.levels) {
+    setLoading(true);
+  }
+  if (!stats.monthly) {
+    setLoading(true);
+  }
+  if (!stats.teachers) {
+    setLoading(true);
+  }
+  if (!stats.students) {
+    setLoading(true);
+  }
   useEffect(() => {
     fetchStats();
   }, []);

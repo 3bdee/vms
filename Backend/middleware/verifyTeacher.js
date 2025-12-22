@@ -19,6 +19,11 @@ export async function verifyToken(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ code: "TOKEN_EXPIRED", error: "Please log in again" });
+    }
     return res.status(401).json({ error: "Invalid token" });
   }
 }
