@@ -18,7 +18,7 @@ const LoginPage = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "https://vms-alhikma.cloud/vms-alhikma/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

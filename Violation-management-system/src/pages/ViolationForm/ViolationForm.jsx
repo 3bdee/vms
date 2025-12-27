@@ -10,13 +10,12 @@ import {
   Calendar,
   CalendarDays,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import Header from "../../components/Header";
 import ViolationAlert from "../../components/ViolationAlert";
 import { generateViolationPDF } from "../../components/PDFGenerator";
-
+import logo from "../../../CoeurAlhikmaLogo.png";
 const EXCLUDED_FIELDS = [
   "id",
   "student_id",
@@ -87,11 +86,14 @@ const ViolationForm = () => {
   const fetchViolations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/violations`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/violations`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch violations");
 
@@ -108,11 +110,14 @@ const ViolationForm = () => {
   const fetchPunishments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/punishments`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/punishments`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch punishments");
 
@@ -129,11 +134,14 @@ const ViolationForm = () => {
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/teachers/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/teachers/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch teachers");
 
@@ -151,7 +159,7 @@ const ViolationForm = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5000/api/violation-records/school`,
+        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/school`,
         {
           headers: {
             Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
@@ -162,7 +170,6 @@ const ViolationForm = () => {
       if (!res.ok) throw new Error("Failed to fetch records");
 
       const data = await res.json();
-
       setViolationRecords(data);
     } catch (error) {
       console.error(error);
@@ -175,11 +182,14 @@ const ViolationForm = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/students/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/students/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch students");
 
@@ -196,13 +206,16 @@ const ViolationForm = () => {
   const fetchSchoolName = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/schools/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/schools/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // if your authenticate middleware uses JWT
+          },
+        }
+      );
 
-      if (!res.ok) throw new Error("Failed to fetch students");
+      if (!res.ok) throw new Error("Failed to fetch school name");
 
       const data = await res.json();
       setSchoolName(data[0].school_name);
@@ -217,11 +230,14 @@ const ViolationForm = () => {
   const fetchLevels = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/levels/school`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://vms-alhikma.cloud/vms-alhikma/api/levels/school`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to fetch levels");
 
@@ -338,44 +354,116 @@ const ViolationForm = () => {
 
   const exportPDF = () => {
     const exportData = cleanForExport(filteredRecords);
-    const doc = new jsPDF();
+    const doc = new jsPDF("p", "mm", "a4");
 
-    // extract columns
-    const columns = Object.keys(exportData[0] || {});
+    doc.addImage(logo, "PNG", 15, 10, 25, 25);
 
-    const rows = exportData.map((item) => Object.values(item));
+    // School name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Group scolaire Al Hikma", 105, 18, { align: "center" });
 
-    doc.text("Violation Records", 14, 15);
-
-    autoTable(doc, {
-      startY: 20,
-      head: [columns],
-      body: rows,
+    // Subtitle
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Registre des Violations Disciplinaires", 105, 25, {
+      align: "center",
     });
 
+    // Date (French – without time)
+    const today = new Date().toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    doc.setFontSize(10);
+    doc.text(`Date : ${today}`, 195, 15, { align: "right" });
+
+    // Line separator
+    doc.line(15, 38, 195, 38);
+    // extract columns
+    //const columns = Object.keys(exportData[0] || {});
+    const tableColumn = [
+      "Date",
+      "Élève",
+      "Enseignant",
+      "Violation",
+      "Sanction",
+    ];
+    //const rows = exportData.map((item) => Object.values(item));
+    const tableRows = exportData.map((item) => [
+      // Date without time
+      new Date(item.violation_time).toLocaleDateString("fr-FR"),
+      `${item.last_name.toUpperCase()} ${item.first_name}
+Niveau : ${item.level}`,
+      item.teacher_name,
+      item.violation_name,
+      item.punishment_name || "—",
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [tableColumn],
+      body: tableRows,
+      styles: {
+        font: "helvetica",
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [33, 150, 243],
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      columnStyles: {
+        0: { cellWidth: 22 }, // Date
+        1: { cellWidth: 40 }, // Élève
+        3: { cellWidth: 30 }, // Enseignant
+        5: { cellWidth: 45 }, // Violation
+        6: { cellWidth: 30 }, // Sanction
+      },
+
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+
+      margin: { left: 15, right: 15 },
+    });
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.text(`Page ${i} / ${pageCount}`, 105, 290, { align: "center" });
+    }
     doc.save("violation_records.pdf");
   };
 
   const handleSubmitViolation = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/violation-records", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          level: formData.level,
-          violation_id: formData.violationId,
-          punishment_id: formData.punishmentId,
-          violation_time: formData.violationTime,
-          teacher_id: formData.teacherId,
-          school_id: school_id,
-        }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/violation-records",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            level: formData.level,
+            violation_id: formData.violationId,
+            punishment_id: formData.punishmentId,
+            violation_time: formData.violationTime,
+            teacher_id: formData.teacherId,
+            school_id: school_id,
+          }),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur serveur");
@@ -443,14 +531,17 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/punishments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ punishment_name: newPunishment }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/punishments",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ punishment_name: newPunishment }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la punition");
@@ -482,14 +573,17 @@ const ViolationForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/violations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ violation_name: newViolation }),
-      });
+      const res = await fetch(
+        "https://vms-alhikma.cloud/vms-alhikma/api/violations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ violation_name: newViolation }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout de la violation");
@@ -517,7 +611,7 @@ const ViolationForm = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/violation-records/${violationId}`,
+        `https://vms-alhikma.cloud/vms-alhikma/api/violation-records/${violationId}`,
         {
           method: "DELETE",
           headers: {

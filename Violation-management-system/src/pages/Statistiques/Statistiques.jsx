@@ -31,7 +31,7 @@ const COLORS = [
   "#a8edea",
   "#fed6e3",
 ];
-const API_URL = "http://localhost:5000/api/statistics";
+const API_URL = "https://vms-alhikma.cloud/vms-alhikma/api/statistics";
 
 const token = localStorage.getItem("token");
 const schoolId = localStorage.getItem("school_id");
